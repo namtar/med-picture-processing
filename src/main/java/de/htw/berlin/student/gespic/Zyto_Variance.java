@@ -26,7 +26,24 @@ public class Zyto_Variance implements PlugInFilter {
 
         // Steps to do.....
 
-        // 1st. Eliminate unneeded objects.
+        // 1st. Eliminate unneeded objects. (everythin what is not between the color range for blue)
+        // as the book says....
+        /**
+         * Die meisten Farbbilder sind mit jeweils einer Komponente für die Primärfarben
+         * Rot, Grün und Blau (RGB) kodiert, typischerweise mit 8 Bits
+         * pro Komponente. Jedes Pixel eines solchen Farbbilds besteht daher aus
+         * 3 × 8 = 24 Bits und der Wertebereich jeder Farbkomponente ist wiederum
+         * [0 . . . 255].
+         */
+        // hilfreich um die Farbkanäle zu extrahieren
+        // http://crazybiocomputing.blogspot.de/2011/11/exploring-colors-and-grays-with-imagej.html
+        // http://imagejdocu.tudor.lu/doku.php?id=plugin:start
+        // sieht gut aus. aus http://www.mecourse.com/landinig/software/software.html ThresholdColor
+        // c=ip.getPixel(x,y);
+        // r = ((c&0xff0000)>>16);//R
+        // g = ((c&0x00ff00)>>8);//G
+        // b = ( c&0x0000ff); //B
+
 
         // 2nd. find contours of objects
 
