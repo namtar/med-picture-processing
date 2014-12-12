@@ -12,8 +12,8 @@ public class ByteArrayTwoDimensionWrapper {
     private int dimensionX;
     private int dimensionY;
 
-    private byte[] originalArray;
-    private byte[] outputImageArray;
+    private int[] originalArray;
+    private int[] outputImageArray;
 
     /**
      * Constructor.
@@ -22,45 +22,45 @@ public class ByteArrayTwoDimensionWrapper {
      * @param dimensionY       the height of the image
      * @param outputImageArray an array that contains all bytes of the output image.
      */
-    public ByteArrayTwoDimensionWrapper(int dimensionX, int dimensionY, byte[] outputImageArray, byte[] originalArray) {
+    public ByteArrayTwoDimensionWrapper(int dimensionX, int dimensionY, int[] outputImageArray, int[] originalArray) {
         this.dimensionX = dimensionX;
         this.dimensionY = dimensionY;
         this.outputImageArray = outputImageArray;
         this.originalArray = originalArray;
     }
 
-    public void setOutputImagePixel(int x, int y, byte pixel) {
+    public void setOutputImagePixel(int x, int y, int pixel) {
         int arrayLocation = (y * dimensionX) + x;
         outputImageArray[arrayLocation] = pixel;
     }
 
-    public void setOutputImagePixel(int index, byte pixel) {
+    public void setOutputImagePixel(int index, int pixel) {
         outputImageArray[index] = pixel;
     }
 
-    public byte getOutputImagePixel(int x, int y) {
+    public int getOutputImagePixel(int x, int y) {
         int arrayLocation = (y * dimensionX) + x;
         return outputImageArray[arrayLocation];
     }
 
-    public int getOutputImageEndianPixel(int x, int y) {
-        int arrayLocation = (y * dimensionX) + x;
-        int pixel = outputImageArray[arrayLocation] & 0xff;
-        return pixel;
-    }
+//    public int getOutputImageEndianPixel(int x, int y) {
+//        int arrayLocation = (y * dimensionX) + x;
+//        int pixel = outputImageArray[arrayLocation] & 0xff;
+//        return pixel;
+//    }
 
-    public byte getOriginalImagePixel(int x, int y) {
+    public int getOriginalImagePixel(int x, int y) {
         int arraLocation = (y * dimensionX) + x;
         return originalArray[arraLocation];
     }
 
-    public int getOriginalImageEndianPixel(int x, int y) {
-        int arrayLocation = (y * dimensionX) + x;
-        int pixel = originalArray[arrayLocation] & 0xff;
-        return pixel;
-    }
+//    public int getOriginalImageEndianPixel(int x, int y) {
+//        int arrayLocation = (y * dimensionX) + x;
+//        int pixel = originalArray[arrayLocation] & 0xff;
+//        return pixel;
+//    }
 
-    public byte[] getOutputImageArray() {
+    public int[] getOutputImageArray() {
         return outputImageArray;
     }
 
