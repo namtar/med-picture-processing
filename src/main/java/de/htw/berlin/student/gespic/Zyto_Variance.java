@@ -7,14 +7,23 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.NewImage;
 import ij.plugin.filter.PlugInFilter;
-import ij.process.Blitter;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 import java.awt.Image;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.Stack;
+import java.util.Vector;
 
 /**
  * Class to determine the lowest, highest and middle variance of the leukocytes.
@@ -24,6 +33,8 @@ import java.net.URL;
  */
 public class Zyto_Variance implements PlugInFilter {
 
+    private int width;
+    private int height;
 
     @Override
     public int setup(String arg, ImagePlus imp) {
@@ -48,13 +59,17 @@ public class Zyto_Variance implements PlugInFilter {
         // TODO: Diese Klasse hier soll so gut wie keine Business Logik enthalten. Diese muss in separaten Klassen umgesetzt werden.
         // Aufgabe dieser Klasse ist es den Workflow umzusetzen.
         ColorProcessor colorProcessor = (ColorProcessor) ip;
+
+        width = colorProcessor.getWidth();
+        height = colorProcessor.getHeight();
+
 //        ImagePlus outputImage = NewImage.createRGBImage("Output Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
         ImagePlus outputImage = NewImage.createByteImage("Output Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
         Rectangle roi = ip.getRoi();
 
         int[] originalPixels = (int[]) colorProcessor.getPixels();
 //        int[] targetPixels = (int[]) outputImage.getProcessor().getPixels();
-        byte[] targetPixels = (byte[]) outputImage.getProcessor().getPixels();
+        byte[] blueSourcePixels = (byte[]) outputImage.getProcessor().getPixels();
         IntArrayTwoDimensionWrapper wrapper = new IntArrayTwoDimensionWrapper(colorProcessor.getWidth(), colorProcessor.getHeight(), null, originalPixels);
 
         for (int y = (int) roi.getY(); y < roi.getY() + roi.getHeight(); y++) {
@@ -70,10 +85,10 @@ public class Zyto_Variance implements PlugInFilter {
 
                 if (red > 140) {
 //                    wrapper.setOutputImagePixel(x, y, -1); // -1 does the trick to fill white
-                    targetPixels[wrapper.transformCoordinate(x, y)] = -1;
+                    blueSourcePixels[wrapper.transformCoordinate(x, y)] = -1;
                 } else {
 //                    wrapper.setOutputImagePixel(x, y, blue);
-                    targetPixels[wrapper.transformCoordinate(x, y)] = (byte) blue;
+                    blueSourcePixels[wrapper.transformCoordinate(x, y)] = (byte) blue;
                 }
             }
         }
@@ -81,7 +96,7 @@ public class Zyto_Variance implements PlugInFilter {
         outputImage.show();
         outputImage.updateAndDraw();
 
-        ClosingHelper closingHelper = new ClosingHelper(targetPixels, colorProcessor.getWidth(), colorProcessor.getHeight());
+        ClosingHelper closingHelper = new ClosingHelper(blueSourcePixels, colorProcessor.getWidth(), colorProcessor.getHeight());
         ImagePlus dilatatedImage = NewImage.createByteImage("Dilatated Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
         byte[] closedPixels = closingHelper.doClosing();
         dilatatedImage.getProcessor().setPixels(closedPixels);
@@ -91,9 +106,9 @@ public class Zyto_Variance implements PlugInFilter {
 
         ImagePlus tracedImage = NewImage.createByteImage("Traced Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
 
-        byte[] tracePixels = new byte[targetPixels.length];
-        for (int i = 0; i < targetPixels.length; i++) {
-            tracePixels[i] = targetPixels[i];
+        byte[] tracePixels = new byte[blueSourcePixels.length];
+        for (int i = 0; i < blueSourcePixels.length; i++) {
+            tracePixels[i] = blueSourcePixels[i];
         }
 
         ContourTracer contourTracer = new ContourTracer(tracePixels, closedPixels, colorProcessor.getWidth(), colorProcessor.getHeight());
@@ -101,6 +116,57 @@ public class Zyto_Variance implements PlugInFilter {
 
         tracedImage.show();
         tracedImage.updateAndDraw();
+
+//        Vector<Polygon> polygons = contourTracer.getPolygonsVector();
+//        Map<Polygon, List<Integer>> polygonValues = new HashMap<Polygon, List<Integer>>();
+//        for (int y = 0; y < colorProcessor.getHeight(); y++) {
+//            for (int x = 0; x < colorProcessor.getWidth(); x++) {
+//                int pixel = ImageHelper.getEndianPixelForCoordinate(blueSourcePixels, x, y, colorProcessor.getWidth());
+//                for (int i = 0; i < polygons.size(); i++) {
+//                    Polygon polygon = polygons.elementAt(i);
+//                    if (polygon.contains(x, y)) {
+//                        if (!polygonValues.containsKey(polygon)) {
+//                            polygonValues.put(polygon, new ArrayList<Integer>());
+//                        }
+//                        polygonValues.get(polygon).add(pixel);
+//                    }
+//                }
+//            }
+//        }
+//        for (Entry<Polygon, List<Integer>> entry : polygonValues.entrySet()) {
+//            System.out.println(entry.getValue());
+//        }
+
+        Vector<Polygon> polygons = contourTracer.getPolygonsVector();
+        Map<Polygon, Set<Pixel>> polygonValues = new HashMap<Polygon, Set<Pixel>>();
+        for (int i = 0; i < polygons.size(); i++) {
+            Polygon polygon = polygons.elementAt(i);
+            List<Pixel> values = new ArrayList<Pixel>();
+
+            // Code from Digitale Bilverarbeitung mit ImageJ
+            Stack<Pixel> stack = new Stack<Pixel>(); // Stack
+            stack.push(new Pixel(polygon.xpoints[0], polygon.ypoints[0]));
+            while (!stack.isEmpty()) {
+                Pixel pixelCoordinate = stack.pop();
+                if ((pixelCoordinate.getX() >= 0) && (pixelCoordinate.getX() < width) && (pixelCoordinate.getY() >= 0) && (pixelCoordinate.getY() < height)) {
+                    int pixel = ImageHelper.getEndianPixelForCoordinate(blueSourcePixels, pixelCoordinate.getX(), pixelCoordinate.getY(), width);
+                    if (pixel != Constants.BACKGROUND_VAL && !values.contains(pixelCoordinate)) {
+
+                        pixelCoordinate.setValue(pixel);
+                        values.add(pixelCoordinate);
+                        stack.push(new Pixel(pixelCoordinate.getX() + 1, pixelCoordinate.getY()));
+                        stack.push(new Pixel(pixelCoordinate.getX(), pixelCoordinate.getY() + 1));
+                        stack.push(new Pixel(pixelCoordinate.getX(), pixelCoordinate.getY() - 1));
+                        stack.push(new Pixel(pixelCoordinate.getX() - 1, pixelCoordinate.getY()));
+                    }
+                }
+            }
+            polygonValues.put(polygon, new HashSet<Pixel>(values));
+        }
+
+//            collectValues(polygon.xpoints[0], polygon.ypoints[0], colorProcessor.getWidth(), colorProcessor.getHeight(), values, blueSourcePixels);
+//            polygonValues.put(polygon, new HashSet<Pixel>(values));
+
 
         // Steps to do.....
 
@@ -131,6 +197,22 @@ public class Zyto_Variance implements PlugInFilter {
 
         // 5th. create output image and paint borders of objects with different colors to show the correct processing.
     }
+
+//    private void collectValues(int x, int y, int width, int height, List<Pixel> valueSet, byte[] pixels) {
+//
+//        if (x < 0 || x == width || y < 0 || y == height) {
+//            return;
+//        }
+//
+//        int pixel = ImageHelper.getEndianPixelForCoordinate(pixels, x, y, width);
+//        if (pixel != Constants.BACKGROUND_VAL) {
+//            valueSet.add(new Pixel(x, y, pixel));
+//            collectValues(x + 1, y, width, height, valueSet, pixels);
+//            collectValues(x - 1, y, width, height, valueSet, pixels);
+//            collectValues(x, y + 1, width, height, valueSet, pixels);
+//            collectValues(x, y - 1, width, height, valueSet, pixels);
+//        }
+//    }
 
     public static void main(String[] args) {
 

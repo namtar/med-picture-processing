@@ -193,6 +193,10 @@ public class ContourTracer {
         return false;
     }
 
+    public Vector<Polygon> getPolygonsVector() {
+        return polyvec;
+    }
+
     private enum Turn {
         LEFT,
         RIGHT,
