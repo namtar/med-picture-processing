@@ -50,8 +50,6 @@ public class ContourTracer {
 
         // iterate over objectPixels and start tracing on blue pixels for every found object pixel.
 
-        int count = 0;
-
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int pixelOfInterest = ImageHelper.getEndianPixelForCoordinate(objectPixels, x, y, width);
@@ -68,54 +66,46 @@ public class ContourTracer {
                         }
                     }
 
-//                    if(isBorder) {
-//                        System.out.println("y = " + borderY + ", x= " + borderX + " contains: " + checkcontains(borderX, borderY));
-//                    }
                     if (!checkcontains(borderX, borderY)) {
                         traceContour(borderX, borderY);
-//                        System.out.println("Co: x " + borderX + ", y " + borderY);
-//                        count++;
                     }
-//                    traceContour(borderX, borderY);
                 }
             }
         }
-//        for (int i = 0; i < polyvec.size(); i++) {
-//            Polygon polygon = polyvec.elementAt(i);
-//            System.out.println(polygon.npoints + ", Co: " + polygon.getBounds());
-//        }
 
         return bluePixels;
     }
 
     private void traceContour(int x, int y) {
 
-//        int rightCount = 0; // if rightCount + 1 == 4
+        int rightCount = 0; // if rightCount + 1 == 4
         actualViewDirection = ViewDirection.EAST;
         Polygon currentPolygon = new Polygon();
         Tuple<Integer, Integer> actualPixelPosition = new Tuple<Integer, Integer>(Integer.valueOf(x), Integer.valueOf(y));
         do {
-            int pixel = ImageHelper.doEndian(bluePixels[ImageHelper.transformCoordinate(actualPixelPosition.getX(), actualPixelPosition.getY(), width)]);
-            if (pixel == Constants.BACKGROUND_VAL) {
-                Turn toTurn = Turn.RIGHT;
-//                if (rightCount + 1 == 4) {
-//                    toTurn = Turn.LEFT;
-//                }
-                bluePixels[ImageHelper.transformCoordinate(actualPixelPosition.getX(), actualPixelPosition.getY(), width)] = Constants.BACKGROUND_VAL.byteValue();
-                actualPixelPosition = coordinateDirectionTranscoder(toTurn, actualPixelPosition.getX(), actualPixelPosition.getY());
-//                actualViewDirection = calculateViewDirectionByTurn(actualViewDirection, toTurn);
-//                rightCount++;
+            if (actualPixelPosition.getX() < 0 || actualPixelPosition.getX() == width || actualPixelPosition.getY() < 0 || actualPixelPosition.getY() == height) {
+                actualPixelPosition = coordinateDirectionTranscoder(Turn.RIGHT, actualPixelPosition.getX(), actualPixelPosition.getY());
             } else {
-//                rightCount = 0;
-                currentPolygon.addPoint(actualPixelPosition.getX(), actualPixelPosition.getY());
-                bluePixels[ImageHelper.transformCoordinate(actualPixelPosition.getX(), actualPixelPosition.getY(), width)] = Constants.FOREGROUND_VAL.byteValue();
-                actualPixelPosition = coordinateDirectionTranscoder(Turn.LEFT, actualPixelPosition.getX(), actualPixelPosition.getY());
-//                actualViewDirection = calculateViewDirectionByTurn(actualViewDirection, Turn.LEFT);
+                int pixel = ImageHelper.doEndian(bluePixels[ImageHelper.transformCoordinate(actualPixelPosition.getX(), actualPixelPosition.getY(), width)]);
+                if (pixel == Constants.BACKGROUND_VAL) {
+                    Turn toTurn = Turn.RIGHT;
+                    if (rightCount + 1 == 4) {
+                        toTurn = Turn.LEFT;
+                    }
+                    bluePixels[ImageHelper.transformCoordinate(actualPixelPosition.getX(), actualPixelPosition.getY(), width)] = Constants.BACKGROUND_VAL.byteValue();
+                    actualPixelPosition = coordinateDirectionTranscoder(toTurn, actualPixelPosition.getX(), actualPixelPosition.getY());
+                    rightCount++;
+                } else {
+                    rightCount = 0;
+                    currentPolygon.addPoint(actualPixelPosition.getX(), actualPixelPosition.getY());
+                    bluePixels[ImageHelper.transformCoordinate(actualPixelPosition.getX(), actualPixelPosition.getY(), width)] = Constants.FOREGROUND_VAL.byteValue();
+                    actualPixelPosition = coordinateDirectionTranscoder(Turn.LEFT, actualPixelPosition.getX(), actualPixelPosition.getY());
+                }
             }
 
         } while (actualPixelPosition.getX().intValue() != x || actualPixelPosition.getY().intValue() != y);
 
-        if(currentPolygon.npoints == 1914) {
+        if (currentPolygon.npoints == 1914) {
             System.out.println(actualPixelPosition.toString());
         }
         polyvec.add(currentPolygon);
@@ -136,38 +126,13 @@ public class ContourTracer {
         Integer newX = null;
         Integer newY = null;
 
-        Turn performedTurn = null;
-
         switch (actualViewDirection) {
             case NORTH:
                 newY = actualY;
                 if (turn == Turn.LEFT) {
                     newX = actualX - 1;
-                    performedTurn = turn;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newX = actualX;
-                        newY = actualY - 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newY = actualY;
-                            newX = actualX + 1;
-                            performedTurn = Turn.RIGHT;
-                        }
-                    }
-
                 } else {
                     newX = actualX + 1;
-                    performedTurn = Turn.RIGHT;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newX = actualX;
-                        newY = actualY - 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newY = actualY;
-                            newX = actualX - 1;
-                            performedTurn = Turn.LEFT;
-                        }
-                    }
                 }
 
                 break;
@@ -175,99 +140,31 @@ public class ContourTracer {
                 newX = actualX;
                 if (turn == Turn.LEFT) {
                     newY = actualY - 1;
-                    performedTurn = Turn.LEFT;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newY = actualY;
-                        newX = actualX + 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newX = actualX;
-                            newY = newY + 1;
-                            performedTurn = Turn.RIGHT;
-                        }
-                    }
                 } else {
                     newY = actualY + 1;
-                    performedTurn = Turn.RIGHT;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newY = actualY;
-                        newX = actualX + 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newX = actualX;
-                            newY = actualY - 1;
-                            performedTurn = Turn.LEFT;
-                        }
-                    }
                 }
                 break;
             case SOUTH:
                 newY = actualY;
                 if (turn == Turn.LEFT) {
                     newX = actualX + 1;
-                    performedTurn = Turn.LEFT;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newX = actualX;
-                        newY = actualY + 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newY = actualY;
-                            newX = actualX - 1;
-                            performedTurn = Turn.RIGHT;
-                        }
-                    }
                 } else {
                     newX = actualX - 1;
-                    performedTurn = Turn.RIGHT;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newX = actualX;
-                        newY = actualY + 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newY = actualY;
-                            newX = actualX + 1;
-                            performedTurn = Turn.LEFT;
-                        }
-                    }
                 }
                 break;
             case WEST:
                 newX = actualX;
                 if (turn == Turn.LEFT) {
                     newY = actualY + 1;
-                    performedTurn = Turn.LEFT;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newY = actualY;
-                        newX = actualX - 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newX = actualX;
-                            newY = actualY - 1;
-                            performedTurn = Turn.RIGHT;
-                        }
-                    }
                 } else {
                     newY = actualY - 1;
-                    performedTurn = Turn.RIGHT;
-                    if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                        newY = actualY;
-                        newX = actualX - 1;
-                        performedTurn = Turn.NO;
-                        if (ImageHelper.checkBorder(newX, newY, width, height)) {
-                            newX = actualX;
-                            newY = actualY + 1;
-                            performedTurn = Turn.LEFT;
-                        }
-                    }
                 }
                 break;
             default:
                 throw new IllegalStateException("Given Value not supported: " + this);
         }
 
-        if (performedTurn != Turn.NO) {
-            actualViewDirection = calculateViewDirectionByTurn(performedTurn);
-        }
+        actualViewDirection = calculateViewDirectionByTurn(turn);
 
         return new Tuple<Integer, Integer>(newX, newY);
     }
