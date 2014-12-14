@@ -1,11 +1,13 @@
 package de.htw.berlin.student.gespic;
 
-import de.htw.berlin.student.gespic.utils.ByteArrayTwoDimensionWrapper;
+import de.htw.berlin.student.gespic.utils.ImageHelper;
+import de.htw.berlin.student.gespic.utils.IntArrayTwoDimensionWrapper;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.NewImage;
 import ij.plugin.filter.PlugInFilter;
+import ij.process.Blitter;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
@@ -46,12 +48,14 @@ public class Zyto_Variance implements PlugInFilter {
         // TODO: Diese Klasse hier soll so gut wie keine Business Logik enthalten. Diese muss in separaten Klassen umgesetzt werden.
         // Aufgabe dieser Klasse ist es den Workflow umzusetzen.
         ColorProcessor colorProcessor = (ColorProcessor) ip;
-        ImagePlus outputImage = NewImage.createRGBImage("Output Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
+//        ImagePlus outputImage = NewImage.createRGBImage("Output Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
+        ImagePlus outputImage = NewImage.createByteImage("Output Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
         Rectangle roi = ip.getRoi();
 
         int[] originalPixels = (int[]) colorProcessor.getPixels();
-        int[] targetPixels = (int[]) outputImage.getProcessor().getPixels();
-        ByteArrayTwoDimensionWrapper wrapper = new ByteArrayTwoDimensionWrapper(colorProcessor.getWidth(), colorProcessor.getHeight(), targetPixels, originalPixels);
+//        int[] targetPixels = (int[]) outputImage.getProcessor().getPixels();
+        byte[] targetPixels = (byte[]) outputImage.getProcessor().getPixels();
+        IntArrayTwoDimensionWrapper wrapper = new IntArrayTwoDimensionWrapper(colorProcessor.getWidth(), colorProcessor.getHeight(), null, originalPixels);
 
         for (int y = (int) roi.getY(); y < roi.getY() + roi.getHeight(); y++) {
             for (int x = (int) roi.getX(); x < roi.getX() + roi.getWidth(); x++) {
@@ -65,15 +69,38 @@ public class Zyto_Variance implements PlugInFilter {
 //                System.out.println(red);
 
                 if (red > 140) {
-                    wrapper.setOutputImagePixel(x, y, -1); // -1 does the trick to fill white
+//                    wrapper.setOutputImagePixel(x, y, -1); // -1 does the trick to fill white
+                    targetPixels[wrapper.transformCoordinate(x, y)] = -1;
                 } else {
-                    wrapper.setOutputImagePixel(x, y, pixel);
+//                    wrapper.setOutputImagePixel(x, y, blue);
+                    targetPixels[wrapper.transformCoordinate(x, y)] = (byte) blue;
                 }
             }
         }
 
         outputImage.show();
         outputImage.updateAndDraw();
+
+        ClosingHelper closingHelper = new ClosingHelper(targetPixels, colorProcessor.getWidth(), colorProcessor.getHeight());
+        ImagePlus dilatatedImage = NewImage.createByteImage("Dilatated Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
+        byte[] closedPixels = closingHelper.doClosing();
+        dilatatedImage.getProcessor().setPixels(closedPixels);
+
+        dilatatedImage.show();
+        dilatatedImage.updateAndDraw();
+
+        ImagePlus tracedImage = NewImage.createByteImage("Traced Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
+
+        byte[] tracePixels = new byte[targetPixels.length];
+        for (int i = 0; i < targetPixels.length; i++) {
+            tracePixels[i] = targetPixels[i];
+        }
+
+        ContourTracer contourTracer = new ContourTracer(tracePixels, closedPixels, colorProcessor.getWidth(), colorProcessor.getHeight());
+        tracedImage.getProcessor().setPixels(contourTracer.startTracing());
+
+        tracedImage.show();
+        tracedImage.updateAndDraw();
 
         // Steps to do.....
 
@@ -110,13 +137,14 @@ public class Zyto_Variance implements PlugInFilter {
         new ImageJ();
 
         URL url = Zyto_Variance.class.getClassLoader().getResource("pic/zyto.jpg");
+//        URL url = Zyto_Variance.class.getClassLoader().getResource("pic/Inet1.jpg");
 
         Image image = Toolkit.getDefaultToolkit().getImage(url);
         ImagePlus imagePlus = new ImagePlus("Zyto Original", image);
         if (imagePlus != null) {
             imagePlus.show();
         }
-//        imagePlus.setRoi(511, 119, 20, 20);
+//        imagePlus.setRoi(545, 454, 55, 55);
 
         IJ.runPlugIn(Zyto_Variance.class.getName(), "");
     }
