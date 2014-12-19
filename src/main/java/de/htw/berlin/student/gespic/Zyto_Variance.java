@@ -88,12 +88,12 @@ public class Zyto_Variance implements PlugInFilter {
 				//				0.8 * blue + 0.2 * red
 				//				double channelVal = (0.8 * blue) + (0.1 * red);
 				double channelVal = (blue / ((0.33 * blue) + (0.33 * red) + (0.33 * green) / 3) * 100);
-				if (channelVal > 140) {
+				if (channelVal < 140) {
 					channelVal = Constants.BACKGROUND_VAL;
 				}
 
 				mixedColorPixels[wrapper.transformCoordinate(x, y)] = (byte) channelVal;
-
+                //Changed the copare statement from (red < 140) to (red > 140)
 				if (red > 140) {
 					//                    wrapper.setOutputImagePixel(x, y, -1); // -1 does the trick to fill white
 					blueSourcePixels[wrapper.transformCoordinate(x, y)] = -1;
@@ -110,8 +110,9 @@ public class Zyto_Variance implements PlugInFilter {
 
 		mixedColorImage.show();
 		mixedColorImage.updateAndDraw();
-
-		ClosingHelper closingHelper = new ClosingHelper(blueSourcePixels, colorProcessor.getWidth(), colorProcessor.getHeight());
+        //Changeed the input image for the closing helper
+        ClosingHelper closingHelper = new ClosingHelper(mixedColorPixels, colorProcessor.getWidth(), colorProcessor.getHeight());
+		//TODO ALT: ClosingHelper closingHelper = new ClosingHelper(blueSourcePixels, colorProcessor.getWidth(), colorProcessor.getHeight());
 		ImagePlus dilatatedImage = NewImage.createByteImage("Dilatated Image", colorProcessor.getWidth(), colorProcessor.getHeight(), 1, NewImage.FILL_WHITE);
 		byte[] closedPixels = closingHelper.doClosing();
 		dilatatedImage.getProcessor().setPixels(closedPixels);
