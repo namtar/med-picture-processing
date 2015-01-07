@@ -39,13 +39,16 @@ public class ClosingHelper {
         StructureElement structureElement3x3 = new StructureElement(3); // we want a 3x3 matrix structure element
         StructureElement structureElement7x7 = new StructureElement(7);
 
-        // close
+        // close gaps
         byte[] dilatatedPixels = doDilatation(originalImagePixels, width, height, structureElement3x3);
         dilatatedPixels = doErosion(dilatatedPixels, width, height, structureElement3x3);
 
-        // open to eliminate the noise
+        // open to eliminate the basic noise
         dilatatedPixels = doErosion(dilatatedPixels, width, height, structureElement3x3);
         dilatatedPixels = doDilatation(dilatatedPixels, width, height, structureElement3x3);
+
+        // finally erode image to eleminate all remaining unnecessary pixels.
+        // Note that the image only is used to detect object locations but is not used to trace the borders
         dilatatedPixels = doErosion(dilatatedPixels, width, height, structureElement7x7);
 
 
