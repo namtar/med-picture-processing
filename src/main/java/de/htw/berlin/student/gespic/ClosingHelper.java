@@ -40,11 +40,11 @@ public class ClosingHelper {
         StructureElement structureElement7x7 = new StructureElement(7);
 
         // close gaps
-        byte[] dilatatedPixels = doDilatation(originalImagePixels, width, height, structureElement3x3);
-        dilatatedPixels = doErosion(dilatatedPixels, width, height, structureElement3x3);
+//        byte[] dilatatedPixels = doDilatation(originalImagePixels, width, height, structureElement3x3);
+//        dilatatedPixels = doErosion(dilatatedPixels, width, height, structureElement3x3);
 
         // open to eliminate the basic noise
-        dilatatedPixels = doErosion(dilatatedPixels, width, height, structureElement3x3);
+        byte[] dilatatedPixels = doErosion(originalImagePixels, width, height, structureElement3x3);
         dilatatedPixels = doDilatation(dilatatedPixels, width, height, structureElement3x3);
 
         // finally erode image to eleminate all remaining unnecessary pixels.
