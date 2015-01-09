@@ -3,9 +3,11 @@ package de.htw.berlin.student.gespic;
 import de.htw.berlin.student.gespic.utils.ImageHelper;
 import de.htw.berlin.student.gespic.utils.IntArrayTwoDimensionWrapper;
 import ij.IJ;
+import ij.IJEventListener;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.NewImage;
+import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
@@ -170,6 +172,10 @@ public class Zyto_Variance implements PlugInFilter {
     }
 
     private void calculateAndOutputVariances(Map<Polygon, Set<Pixel>> polygonValues) {
+//        ResultsTable r = new ResultsTable();
+//        r.addColumns();
+//        r.addLabel("X");
+//        r.addValue(1,2.00);
 
         int polyCounter = 1;
         for (Entry<Polygon, Set<Pixel>> entry : polygonValues.entrySet()) {
@@ -219,12 +225,19 @@ public class Zyto_Variance implements PlugInFilter {
             stringBuilder.append(middlestVariance);
             stringBuilder.append(" Highest Variance: ");
             stringBuilder.append(highestVariance);
+            // Outup to Log
 
-            System.out.println(stringBuilder.toString());
+            IJ.log(stringBuilder.toString());
+
+
+
+            //Console Output
+            //System.out.println(stringBuilder.toString());
 
             polyCounter++;
         }
     }
+
 
     public static void main(String[] args) {
 

@@ -52,6 +52,7 @@ public class ClosingHelper {
         dilatatedPixels = doErosion(dilatatedPixels, width, height, structureElement7x7);
 
 
+
         for (int i = 0; i < dilatatedPixels.length; i++) {
             finalPixels[i] = dilatatedPixels[i];
         }
