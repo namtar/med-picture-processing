@@ -17,6 +17,7 @@ import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.net.URL;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -172,10 +173,12 @@ public class Zyto_Variance implements PlugInFilter {
     }
 
     private void calculateAndOutputVariances(Map<Polygon, Set<Pixel>> polygonValues) {
-//        ResultsTable r = new ResultsTable();
-//        r.addColumns();
-//        r.addLabel("X");
-//        r.addValue(1,2.00);
+        ResultsTable r = new ResultsTable();
+        NumberFormat nf = NumberFormat.getIntegerInstance();
+        int count =0;
+
+
+
 
         int polyCounter = 1;
         for (Entry<Polygon, Set<Pixel>> entry : polygonValues.entrySet()) {
@@ -190,7 +193,7 @@ public class Zyto_Variance implements PlugInFilter {
 
             double lowestVariance = 255d;
             double highestVariance = 0d;
-            double varianceSum = 0d;
+            double varianceSum = 0;
             // determine lowest, highest, middlest variance
             for (Pixel pixel : entry.getValue()) {
 
@@ -209,25 +212,39 @@ public class Zyto_Variance implements PlugInFilter {
 
             double middlestVariance = varianceSum / entry.getValue().size();
 
-            StringBuilder stringBuilder = new StringBuilder("Variance for Polygon: ");
-            stringBuilder.append(polyCounter);
-            if (entry.getKey().npoints > 0) {
-                stringBuilder.append(" Start Coordinate: X: ");
-                stringBuilder.append(entry.getKey().xpoints[0]);
-                stringBuilder.append(" Y: ");
-                stringBuilder.append(entry.getKey().ypoints[0]);
-            }
-            stringBuilder.append(" Middlevalue: ");
-            stringBuilder.append(middleValue);
-            stringBuilder.append(" Lowest Variance: ");
-            stringBuilder.append(lowestVariance);
-            stringBuilder.append(" Middlest Variance: ");
-            stringBuilder.append(middlestVariance);
-            stringBuilder.append(" Highest Variance: ");
-            stringBuilder.append(highestVariance);
-            // Outup to Log
+//            StringBuilder stringBuilder = new StringBuilder("Variance for Polygon: ");
+//            stringBuilder.append(polyCounter);
+//            if (entry.getKey().npoints > 0) {
+//                stringBuilder.append(" Start Coordinate: X: ");
+//                stringBuilder.append(entry.getKey().xpoints[0]);
+//                stringBuilder.append(" Y: ");
+//                stringBuilder.append(entry.getKey().ypoints[0]);
+//            }
+//            stringBuilder.append(" Middlevalue: ");
+//            stringBuilder.append(middleValue);
+//            stringBuilder.append(" Lowest Variance: ");
+//            stringBuilder.append(lowestVariance);
+//            stringBuilder.append(" Middlest Variance: ");
+//            stringBuilder.append(middlestVariance);
+//            stringBuilder.append(" Highest Variance: ");
+//            stringBuilder.append(highestVariance);
 
-            IJ.log(stringBuilder.toString());
+
+            //Output result Table
+
+            r.incrementCounter();
+            r.setValue("x",count,nf.format(entry.getKey().xpoints[0]));
+            r.setValue("y",count,nf.format(entry.getKey().ypoints[0]));
+            r.setValue("Meiddlevalue",count,middleValue);
+            r.setValue("Lowest Variance",count,lowestVariance);
+            r.setValue("Middlest Variance",count,middlestVariance);
+            r.setValue("Highest Variance",count,highestVariance);
+
+
+            count++;
+            // Outup to Log
+            //IJ.log(stringBuilder.toString());
+
 
 
 
@@ -236,6 +253,7 @@ public class Zyto_Variance implements PlugInFilter {
 
             polyCounter++;
         }
+        r.show("Result");
     }
 
 
