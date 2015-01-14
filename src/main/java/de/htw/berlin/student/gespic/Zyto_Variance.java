@@ -59,8 +59,6 @@ public class Zyto_Variance implements PlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
 
-        // TODO: Diese Klasse hier soll so gut wie keine Business Logik enthalten. Diese muss in separaten Klassen umgesetzt werden.
-        // Aufgabe dieser Klasse ist es den Workflow umzusetzen.
         ColorProcessor colorProcessor = (ColorProcessor) ip;
 
         width = colorProcessor.getWidth();
