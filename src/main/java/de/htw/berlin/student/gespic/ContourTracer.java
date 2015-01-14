@@ -105,9 +105,6 @@ public class ContourTracer {
 
         } while (actualPixelPosition.getX().intValue() != x || actualPixelPosition.getY().intValue() != y);
 
-        if (currentPolygon.npoints == 1914) {
-            System.out.println(actualPixelPosition.toString());
-        }
         polyvec.add(currentPolygon);
     }
 
